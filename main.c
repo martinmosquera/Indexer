@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
         while(next){
             printf("\nDigite a rota do arquivo junto com o nome Ex-> C:\\exemplo.txt seguido da tecla Enter \n Para Sair digite \"s\" e Enter\n");
             scanf("%s",arquivo);    
-            if(strcmp(arquivo,"s") == 0) next = false;
+            if(strcmp(arquivo,"s") == 0 || getchar() == EOF) next = false;
             if(!next) break;
             file = getFile(arquivo);
             if(file != NULL){
@@ -104,6 +104,8 @@ int main(int argc, char** argv) {
       printf("Mensagem de Erro");
       break;
    }
+
+    // printTable(indexer);
     sair = false;
    while(!sair){
        showMenu();

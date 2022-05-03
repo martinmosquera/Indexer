@@ -1,5 +1,5 @@
 #define EXIT_SUCCESS 0
-#define TAM_TABLE 97
+#define TAM_TABLE 11
 #define TAM_STRING 60
 #define SEED 0x12345678
 
@@ -7,7 +7,7 @@
 #define BLACK 0
 
 typedef enum Logico {false, true}boolean;
-typedef enum tam_table {XSMALL,SMALL,MEDIUM,LARGE,XLARGE}TAM;
+typedef enum tam_table {XXXSMALL,XXSMALL,XSMALL,SMALL,MEDIUM,LARGE,XLARGE}TAM;
 typedef char String[60];
 typedef FILE* ARQ;
 
@@ -110,5 +110,8 @@ void printArv(Nodo* nodo);
 
 int cor(Nodo* c);
 
+int altura_arvore(struct nodo *a);
 
+void printTable(Table* t);
 
+void free_arv(Table* newTable,struct nodo* nodo);
