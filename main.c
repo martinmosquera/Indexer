@@ -104,7 +104,6 @@ int main(int argc, char** argv) {
       printf("Mensagem de Erro");
       break;
    }
-   printTable(indexer);
     sair = false;
    while(!sair){
        showMenu();

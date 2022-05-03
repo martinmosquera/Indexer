@@ -3,9 +3,11 @@
 #define TAM_STRING 60
 #define SEED 0x12345678
 
+#define RED 1
+#define BLACK 0
+
 typedef enum Logico {false, true}boolean;
 typedef enum tam_table {XSMALL,SMALL,MEDIUM,LARGE,XLARGE}TAM;
-typedef enum color {BLACK,RED} Color;
 typedef char String[60];
 typedef FILE* ARQ;
 
@@ -29,18 +31,19 @@ typedef struct nodo{
     String keyNodo;
     struct nodo* dir;
     struct nodo* ezq;
-    struct nodo* pai;
     int qtdRepeticoes;
-    Color color;
+    int color;
 }Nodo;
 
 typedef struct arvore{
     String keyRoot;
     int profundidade;
     struct nodo* root;
-    int qtdRepeticoes;
+    int maxRep;
     struct nodo* n;
 }Arvore;
+
+typedef struct nodo* Root;
 
 typedef struct taux{
     String valor;
@@ -83,25 +86,29 @@ Table* aumentaTamnaho(Table* t,String dado);
 
 TAM getSize(int num);
 
-Nodo* inserereInArvore(Table* t,String dado);
-
 void printTable(Table* t);
 
 int hash_Alex(Table *t,String dado);
 
-Arvore* create_arv(Table* t,String dado);
+void trocar_cor(Nodo* c);
 
-Arvore* switchValueRoot(Arvore* a,String dado);
+Nodo* rotacaoEzq(Nodo* nodo);
 
-void insert(Arvore* a, Nodo* n);
+Nodo* rotacaoDir(Nodo* nodo);
 
-void arruma_arriba(Arvore* a, Nodo *n);
+Nodo* move2EzqR(Nodo* nodo);
 
-int buscar (Nodo *a, String v);
+Nodo* move2DirR(Nodo* nodo);
 
-void rota_esq(Arvore *a, Nodo *n);
+Nodo* balancear(Nodo* nodo);
 
-void rota_dir(Arvore *a, Nodo *n);
+Table* insere_arv(Table* t,struct nodo* raiz,String valor);
 
-Nodo* create_nodo(String val);
+Nodo* insereNO(Table* t,Nodo* nodo,String valor);
+
+void printArv(Nodo* nodo);
+
+int cor(Nodo* c);
+
+
 

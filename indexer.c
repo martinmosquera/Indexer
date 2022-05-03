@@ -157,33 +157,38 @@ Table* insereFila(Table* t, String dado){
     int tam = getTamanho(t);
     int res = (pos*pos2)%tam;
     if(t == NULL) return NULL;
-    if(strcmp(dado,"")==0) return t;
-
+    
+    // verifica se nao tem nada na fila
+  if(strcmp(t->filas[pos].keyFila,"")==0){
+        insereInNull(t,dado,pos);
+        return t;
+    }
+    // verifica se es o mesmo dado
     if(strcmp(t->filas[pos].keyFila,dado)==0){
         t->filas[pos].qtdRepeticiones++;
         return t;
     }
-        int result = 0;
-        result = (t->filas[pos].arv->profundidade/t->qtdOcupando);
-        if(result > 7){
-            t = aumentaTamnaho(t,dado);
-        }
-    if(strcmp(t->filas[pos].keyFila,"")==0){
-        insereInNull(t,dado,pos);
-        return t;
-    }else if(strcmp(t->filas[pos2].keyFila,"")==0){
+
+    // verifica o tamanho da tabela =>  4 > n/m < 8  n -> produndiade m->qtd elementos 
+    int result = 0;
+    result = (t->filas[pos].arv->profundidade/t->qtdOcupando);
+    if(result > 4){
+      t = aumentaTamnaho(t,dado);
+    }
+    // procura pela segunda posicao posivel
+    if(strcmp(t->filas[pos2].keyFila,"")==0){
         insereInNull(t,dado,pos2);
         return t;
+        // procura pela ultima posicao posivel
     }else if(strcmp(t->filas[res].keyFila,"")==0){
         insereInNull(t,dado,res);
         return t;
     }else{
-        if(t->filas[pos].arv == NULL){
-        t->filas[pos].arv = create_arv(t,dado);
+        if(t->filas[pos].arv->root == NULL){
+        
+        t = insere_arv(t,t->filas[pos].arv->root,dado);
+        printf("%s\n",t->filas[pos].arv->keyRoot);
         }
-        Nodo* nodo;
-        nodo = create_nodo(dado);
-        insert(t->filas[pos].arv,nodo);
     }
         
     return t;
@@ -276,190 +281,132 @@ TAM getSize(int num){
     return t;
 }
 
-Nodo* inserereInArvore(Table* t,String dado){
+
+//// reimplementacao do arvore red black
+
+void trocar_cor(Nodo* c){
+    c->color = !c->color;
+    if(c->ezq != NULL)
+        c->ezq->color = !c->ezq->color;
+    if(c->dir != NULL)
+        c->dir->color = !c->dir->color;    
+}
+
+int cor(Nodo* c){
+    if(c->color==0)
+        return BLACK;
+    else    
+        return c->color;
+}
+
+Nodo* rotacaoEzq(Nodo* nodo){
+    Nodo* aux = nodo->dir;
+    nodo->dir = aux->ezq;
+    aux ->ezq = nodo;
+    aux->color = nodo->color;
+    nodo->color = RED;
+    return aux;
+}
+
+Nodo* rotacaoDir(Nodo* nodo){
+    Nodo* aux = nodo->ezq;
+    nodo->ezq = aux->dir;
+    aux ->dir = nodo;
+    aux->color = nodo->color;
+    nodo->color = RED;
+    return aux;
+}
+
+Nodo* move2EzqR(Nodo* nodo){
+    trocar_cor(nodo);
+    if(cor(nodo->dir->ezq)==RED){
+        nodo->dir = rotacaoDir(nodo->dir);
+        nodo = rotacaoEzq(nodo);
+        trocar_cor(nodo);
+    }
+    return nodo;
+}
+
+Nodo* move2DirR(Nodo* nodo){
+    trocar_cor(nodo);
+    if(cor(nodo->ezq->ezq)==RED){
+        nodo = rotacaoDir(nodo);
+        trocar_cor(nodo);
+    }
+    return nodo;
+}
+
+
+Nodo* balancear(Nodo* nodo){
+
+    if(cor(nodo->dir)==RED)
+        nodo = rotacaoEzq(nodo);
+    if(nodo->ezq != NULL && cor(nodo->dir)==RED && cor(nodo->ezq->ezq) == RED)
+        nodo = rotacaoDir(nodo);
+    if(cor(nodo->ezq)==RED && cor(nodo->dir)==RED)
+        trocar_cor(nodo);
+    return nodo;
+}
+
+Table* insere_arv(Table* t,struct nodo *raiz,String valor){
+    raiz = insereNO(t,raiz,valor);
+    if((raiz)!=NULL)
+        (raiz)->color = BLACK;
+    int pos = hash(t,valor);
+    t->filas[pos].arv->root = raiz;
+    return t;
+}
+
+Nodo* insereNO(Table* t,Nodo* nodo,String valor){
     
-    int pos = hash(t,dado);
-    Nodo * nodo = t->filas[pos].arv->root;
-    Nodo* ant;
-    while(nodo != NULL){
-        if(strcmp(nodo->keyNodo,dado)==0){
-            nodo->qtdRepeticoes++;
-            t->qtdLidas++;
-            return nodo;
-        }
-        ant =nodo;
-        nodo = nodo->dir;
+    if(nodo == NULL){
+        Nodo* novo;
+        novo = (struct nodo*)malloc(sizeof(struct nodo));
+        if(novo == NULL)
+            return NULL;
+        strcpy(novo->keyNodo,valor);
+        novo->color = RED;
+        novo->dir = NULL;
+        novo->ezq = NULL;
+        t->qtdLidas++;
+        t->qtdOcupando++;
+        return novo;
     }
-    ant->dir = (Nodo*)malloc(sizeof(Nodo));
-    strcpy(ant->dir->keyNodo,dado);
-    ant->dir->qtdRepeticoes =1;
-    t->qtdOcupando++;
-    t->qtdLidas++;
-    return nodo;   
-}
+    if(strcmp(valor,nodo->keyNodo)==0){
+      nodo->qtdRepeticoes++;
 
-void printTable(Table* t){
-    int num = getTamanho(t);
-    for(int i =0;i<num;i++){
-        if(strcmp(t->filas[i].keyFila,"")!=0) 
-            printf("\n| Fila: %d  \t|   %s    | %d",i,t->filas[i].keyFila,t->filas[i].qtdRepeticiones);
     }
-}
-
-Arvore* create_arv(Table* t,String dado){
-  Arvore* a = (struct arvore*)malloc(sizeof(Arvore));
-  Nodo* n = (struct nodo*)malloc(sizeof(struct nodo));
-  n->qtdRepeticoes = 1;
-  n->ezq = NULL;
-  n->dir = NULL;
-  n->pai = NULL;
-  n->color = BLACK;
-  strcpy(n->keyNodo,dado);
-  a->n = n;
-  a->root = a->n;
-  // se o dado que chega se repete mais que o dado do arvore troca???
-  if(strcmp(dado,a->keyRoot)==0){
-      a->root->qtdRepeticoes++;
-      t->qtdLidas++;
-  }else if(a->qtdRepeticoes == 1){
-
-      if(strcmp(dado,a->keyRoot)>0){
-          a = switchValueRoot(a,dado);
-      }else{
-          insert(a,n);
-      }
-  }
-  return a;
-}
-
-Arvore* switchValueRoot(Arvore* a,String dado){
-    strcpy(a->keyRoot,dado);
-    a->qtdRepeticoes =1;
-    return a;
-}
-
-void insert(Arvore* a, Nodo* n) {
-  Nodo* aux = a->n;
-  Nodo* mov = a->root;
-
-  while(mov != a->n){
-    aux = mov;
-    if(strcmp(n->keyNodo,mov->keyNodo)<0)
-      mov = mov->ezq;
-    else
-      mov = mov->dir;
-  }
-  n->pai = aux;
-
-  if(aux == a->n)
-    a->root = n;
-  else if(strcmp(n->keyNodo,aux->keyNodo)<0)
-    aux->ezq = n;
-  else
-    aux->dir = n;
-  n->dir = a->n;
-  n->ezq = a->n;
-
-arruma_arriba(a, n);
-}
-
-
-void arruma_arriba(Arvore* a, Nodo *n) {
-  while(n->pai->color == 1){
-    if(n->pai == n->pai->pai->ezq){
-      Nodo* aux = n->pai->pai->dir;
-      if(aux->color == 1){
-        n->pai->color = 0;
-        aux->color = 0;
-        n->pai->pai->color = 1;
-        n = n->pai->pai;
-      }else{
-        if(n == n->pai->dir){
-          n = n->pai;
-          rota_esq(a,n);
-        }
-        n->pai->color = 0;
-        n->pai->pai->color = 1;
-        rota_dir(a,n->pai->pai);
-        }
-      }else{
-        Nodo* aux = n->pai->pai->ezq;
-        if(aux->color == 1){
-          n->pai->color = 0;
-          aux->color = 0;
-          n->pai->pai->color = 1;
-          n = n->pai->pai;
-        }else{
-          if(n == n->pai->ezq){
-            n = n->pai;
-            rota_dir(a,n);
-          }
-          n->pai->color = 0;
-          n->pai->pai->color = 1;
-          rota_esq(a,n->pai->pai);
-      }
+    if(strcmp(valor,nodo->keyNodo)<0){
+        nodo->ezq = insereNO(t,nodo->ezq,valor);
     }
-  }
-  a->root->color = 0;
+        
+    else{
+        nodo->dir = insereNO(t,nodo->dir,valor);
+    }
+        
+    if(nodo->ezq != NULL && nodo->dir != NULL){
+
+        if(cor(nodo->dir)== RED && cor(nodo->ezq) == BLACK){
+            nodo = rotacaoEzq(nodo);
+        }
+            
+        if(cor(nodo->ezq)==RED && cor(nodo->dir)==RED){
+            trocar_cor(nodo);
+        }
+    }
+    
+    if(nodo->ezq != NULL && nodo->ezq->ezq != NULL){
+        if(cor(nodo->ezq)==RED && cor(nodo->ezq->ezq)==RED){
+        nodo = rotacaoDir(nodo);
+    }
+    }
+    
+    return nodo;
 }
 
-int buscar (Nodo *a, String v) {
-  if (a == NULL) { return 0; } /*Nao achou*/
-  else if (v < a->keyNodo) {
-    return buscar (a->ezq, v);
-  }
-  else if (v > a->keyNodo) {
-    return buscar (a->dir, v);
-  }
-  else { return 1; } /*Achou*/
-}
-
-void rota_esq(Arvore *a, Nodo *n) {
-  Nodo *aux = n->dir;
-  n->dir = aux->ezq;
-  if(aux->ezq != a->root) {
-    aux->ezq->pai = n;
-  }
-  aux->pai = n->pai;
-  if(n->pai == a->root) {
-    a->root = aux;
-  }
-  else if(n == n->pai->ezq) {
-    n->pai->ezq = aux;
-  }
-  else {
-    n->pai->dir = aux;
-  }
-  aux->ezq = n;
-  n->pai = aux;
-}
-
-void rota_dir(Arvore *a, Nodo *n) {
-  Nodo* aux =  n->ezq;
-  n->ezq = aux->dir;
-  if(aux->dir != a->root){
-    aux->dir->pai = n;
-  }
-  aux->pai = n->pai;
-  if(n->pai == a->root){
-    a->root = aux;
-  }else if(n == n->pai->dir){
-    n->pai->dir = aux;
-  }else{
-    n->pai->ezq = aux;
-  }
-  aux->dir = n;
-  n->pai = aux;
-}
-
-Nodo* create_nodo(String val){
-  Nodo* n = (Nodo*)malloc(sizeof(Nodo));
-  n->ezq = NULL;
-  n->dir = NULL;
-  n->pai = NULL;
-  n->qtdRepeticoes = 1;
-  strcpy(n->keyNodo,val);
-  n->color = 1;
-
-return n;
+void printArv(Nodo* nodo){
+    if(!nodo) return;
+    printArv(nodo->ezq);
+    printf(" valor %s \n",nodo->keyNodo);
+    printArv(nodo->dir);
 }
