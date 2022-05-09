@@ -105,8 +105,8 @@ int main(int argc, char** argv) {
       break;
    }
 
-    // printTable(indexer);
     sair = false;
+    printTable(indexer);
    while(!sair){
        showMenu();
         scanf("%d",&resMenu);

@@ -33,17 +33,23 @@ Indexer carregaTabela(ARQ file)
 {
   String palavra;
   Table* t;
-  t = initTable(97);
+  t = initTable(11);
   int count = 0;
   while (feof(file) == 0)
   {
     fscanf(file, "%s", palavra);
     char *word;
+    // strcpy(word,getStringClean(palavra));
     word = getStringClean(palavra);
-    if (strcmp(word, "") == 0)
-      continue;
-    t = insereFila(t, word);
-    count++;
+    strcpy(palavra,word);
+    if (strcmp(palavra, "") == 0)
+    continue;
+    else{
+      t = insereFila(t, palavra);
+      count++;
+      if(count>500) break;
+    }
+    
   }
   fclose(file);
   return t;
@@ -53,7 +59,7 @@ Indexer carregaTabelaFreqN(ARQ arquivo, int num)
 {
   String palavra;
   int count = 0;
-  Indexer indexer = initTable(97);
+  Indexer indexer = initTable(11);
   Fila filas[num];
   indexer->taux = filas;
   while (feof(arquivo) == 0)
@@ -73,7 +79,7 @@ Indexer carregaTabelaFeqP(ARQ arquivo, String palavra)
   printf("Palavra a perquisar: %s", palavra);
   int count = 0;
   Indexer indexer;
-  indexer = initTable(97);
+  indexer = initTable(11);
   while (feof(arquivo) == 0)
   {
     fscanf(arquivo, "%s", palavra);
@@ -95,7 +101,7 @@ Indexer carregaTabelaSearch(ARQ Arquivos[], String palavra, int tam)
   {
     ARQ arquivo = Arquivos[j];
     int count = 0;
-    indexer = initTable(97);
+    indexer = initTable(11);
     while (feof(arquivo) == 0)
     {
       fscanf(arquivo, "%s", palavra);
@@ -156,6 +162,7 @@ Table *initTable(int tam)
   t->qtdLidas = 0;
   t->qtdOcupando = 0;
   t->taux = NULL;
+  t->filas = (Fila*)calloc(sizeof(Fila),tam);
   for (int i = 0; i < tam; i++)
   {
     t->filas[i].arv = NULL;
@@ -179,6 +186,7 @@ void freeTable(Table *t)
         free(t->filas[i].arv);
       }
     }
+    free(t->filas);
     free(t);
     printf("tabela liberada com sucesso!\n");
   }
@@ -192,7 +200,6 @@ Table *insereFila(Table *t, String dado)
   int res = (pos * pos2) % tam;
   if (t == NULL)
     return NULL;
-  struct nodo *raiz;
   // verifica se nao tem nada na fila
   if (strcmp(t->filas[pos].keyFila, "") == 0)
   {
@@ -205,31 +212,32 @@ Table *insereFila(Table *t, String dado)
     return t;
   }
   // procura pela segunda posicao posivel
-  else if (strcmp(t->filas[(pos + pos2) / 2].keyFila, "") == 0)
+  else if (strcmp(t->filas[pos2].keyFila, "") == 0)
   {
-    insereInNull(t, dado, (pos + pos2) / 2);
+    insereInNull(t, dado, pos2);
     return t;
     // procura pela ultima posicao posivel
   }
-  else if (strcmp(t->filas[(pos + pos2 + res) / 3].keyFila, "") == 0)
+  else if (strcmp(t->filas[(pos * pos2 * res) % tam].keyFila, "") == 0)
   {
-    insereInNull(t, dado, (pos + pos2 + res) / 3);
+    insereInNull(t, dado, (pos * pos2 * res) % tam);
     return t;
   }
   else
   {
     t = insere_arv(t, t->filas[pos].arv->root, dado);
+    int tamanho = getTamanho(t);
+     int result = altura_arvore(t->filas[pos].arv->root);
+    printf("o resultado %d \n",result);
+    if (result > (tamanho/2))
+    {
+      printf("entro en el aumento");
+      t = aumentaTamnaho(t); 
+      printf("paso el aumento");
+    }
   }
 
   //   raiz = t->filas[pos].arv->root;
-
-  int result = altura_arvore(t->filas[pos].arv->root);
-  if (result > 100)
-  {
-    t = aumentaTamnaho(t, dado);
-    printf("Tabela crecendo");
-  }
-
   return t;
 }
 
@@ -279,26 +287,43 @@ void insereInNull(Table *t, String entrando, int pos)
   t->qtdOcupando++;
 }
 
-Table *aumentaTamnaho(Table *t, String dado)
+Table *aumentaTamnaho(Table *t)
 {
   int tamIni, tamFinal;
   tamIni = getTamanho(t);
+  if(t->tamanho < INOMINUS)
   t->tamanho = (t->tamanho + 1);
+  else t->tamanho = INOMINUS;
   tamFinal = getTamanho(t);
-  printf("Tamanho depois %d",tamFinal);
+  if(tamIni == tamFinal) return t;
   Table *newTable = initTable(tamFinal);
-  newTable = insereFila(newTable, dado);
-  Nodo *nodo, *aux;
+  int pos,pos2,res,pos3;
   for (int i = 0; i < tamIni; i++)
   {
     // se o arv nao es null
-    if (t->filas[i].arv->profundidade > 0)
+    insereFila(newTable, t->filas[i].keyFila);
+    pos = hash(newTable,t->filas[i].keyFila);
+    pos2 = hash_Alex(newTable,t->filas[i].keyFila);
+    res = (pos*pos2)%tamFinal;
+    pos3 = (pos*pos2*res)%tamFinal;
+    if(strcmp(newTable->filas[pos].keyFila,t->filas[i].keyFila)==0)
+      newTable->filas[pos].qtdRepeticiones = t->filas[i].qtdRepeticiones;
+    else if (strcmp(newTable->filas[pos2].keyFila,t->filas[i].keyFila)==0)
+      newTable->filas[pos2].qtdRepeticiones = t->filas[i].qtdRepeticiones;   
+    else if (strcmp(newTable->filas[pos3].keyFila,t->filas[i].keyFila)==0)
+      newTable->filas[pos3].qtdRepeticiones = t->filas[i].qtdRepeticiones;   
+    else{
+        Nodo* nodo = getNodo(newTable->filas[pos].arv->root,t->filas[i].keyFila);
+        nodo->qtdRepeticoes = t->filas[i].qtdRepeticiones;
+    }
+    if (t->filas[i].arv->root != NULL)
     {
       free_arv(newTable, t->filas[i].arv->root);
     }
-    insereFila(newTable, t->filas[i].keyFila);
+    
     free(t->filas[i].arv);
   }
+  free(t->filas);
   free(t);
   return (newTable);
 }
@@ -321,6 +346,13 @@ int getTamanho(Table *t)
     i = 50053;
   else if (t->tamanho == XLARGE)
     i = 100043;
+  else if (t->tamanho == XXLARGE)
+    i = 10000019;
+  else if (t->tamanho == XXXLARGE)
+    i = 50000047;
+  else if (t->tamanho == INOMINUS)
+    i = 200000083;
+
   return i;
 }
 
@@ -341,6 +373,12 @@ TAM getSize(int num)
     t = LARGE;
   else if (num == 100043)
     t = XLARGE;
+  else if (num == 10000019)
+    t = XXLARGE;
+  else if (num == 50000047)
+    t = XXXLARGE;
+  else
+    t = INOMINUS;
   return t;
 }
 
@@ -441,6 +479,7 @@ Nodo *insereNO(Table *t, Nodo *nodo, String valor)
     novo->color = RED;
     novo->dir = NULL;
     novo->ezq = NULL;
+    novo->qtdRepeticoes = 1;
     t->qtdLidas++;
     t->qtdOcupando++;
     return novo;
@@ -450,12 +489,12 @@ Nodo *insereNO(Table *t, Nodo *nodo, String valor)
     t->qtdLidas++;
     nodo->qtdRepeticoes++;
   }
-  if (strcmp(valor, nodo->keyNodo) < 0)
+  else if (strcmp(valor, nodo->keyNodo) < 0)
   {
     nodo->ezq = insereNO(t, nodo->ezq, valor);
   }
 
-  else
+  else if (strcmp(valor, nodo->keyNodo) > 0)
   {
     nodo->dir = insereNO(t, nodo->dir, valor);
   }
@@ -491,7 +530,7 @@ void printArv(Nodo *nodo)
   if (!nodo)
     return;
   printArv(nodo->ezq);
-  printf(" valor %s \n", nodo->keyNodo);
+  printf(" valor %s  repeticoes %d \n", nodo->keyNodo,nodo->qtdRepeticoes);
   printArv(nodo->dir);
 }
 
@@ -509,19 +548,46 @@ int altura_arvore(struct nodo *a)
 
 void printTable(Table *t)
 {
-  for (int m = 0; m < t->tamanho; m++)
+  int ta = getTamanho(t);
+  for (int m = 0; m < ta; m++)
   {
-    printf("Posicao %d \t|Dado %s    | Repticoes %d", m, t->filas[m].keyFila, t->filas[m].qtdRepeticiones);
-    if (t->filas[m].arv != NULL)
-      printArv(t->filas[m].arv->root);
+    printf("\nPosicao %d \t|Dado %s    | Repticoes %d\n", m, t->filas[m].keyFila, t->filas[m].qtdRepeticiones);
+    if(t->filas[m].arv != NULL)
+    printArv(t->filas[m].arv->root);
   }
 }
 void free_arv(Table *newTable, struct nodo *nodo)
 {
-  if (!nodo)
+  if (nodo == NULL)
     return;
+  int pos,pos2,pos3,res;
+  int tam = getTamanho(newTable);
   free_arv(newTable, nodo->ezq);
   free_arv(newTable, nodo->dir);
   insereFila(newTable, nodo->keyNodo);
+  if(nodo->qtdRepeticoes>1){
+    pos = hash(newTable,nodo->keyNodo);
+    pos2 = hash_Alex(newTable,nodo->keyNodo);
+    res = (pos * pos2) % tam;
+    pos3 = (pos*pos2*res)%tam;
+    if(strcmp(newTable->filas[pos].keyFila,nodo->keyNodo)==0){
+      newTable->filas[pos].qtdRepeticiones = nodo->qtdRepeticoes;
+    }else if(strcmp(newTable->filas[pos2].keyFila,nodo->keyNodo)==0){
+      newTable->filas[pos2].qtdRepeticiones = nodo->qtdRepeticoes;
+    }else if(strcmp(newTable->filas[pos3].keyFila,nodo->keyNodo)==0){
+      newTable->filas[pos3].qtdRepeticiones = nodo->qtdRepeticoes;
+    }else{
+      Nodo* nod = getNodo(newTable->filas[pos].arv->root,nodo->keyNodo);
+      nod->qtdRepeticoes = nodo->qtdRepeticoes;
+    } 
+  }
   free(nodo);
+}
+
+Nodo* getNodo(Nodo* nodo,String dado){
+    if(nodo == NULL) return NULL;
+    if(strcmp(nodo->keyNodo,dado)==0) return nodo;
+    else if(strcmp(nodo->keyNodo,dado)>0) getNodo(nodo->ezq,dado);
+    else if(strcmp(nodo->keyNodo,dado)<0) getNodo(nodo->dir,dado);
+    return NULL;
 }

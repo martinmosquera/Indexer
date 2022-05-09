@@ -7,7 +7,7 @@
 #define BLACK 0
 
 typedef enum Logico {false, true}boolean;
-typedef enum tam_table {XXXSMALL,XXSMALL,XSMALL,SMALL,MEDIUM,LARGE,XLARGE}TAM;
+typedef enum tam_table {XXXSMALL,XXSMALL,XSMALL,SMALL,MEDIUM,LARGE,XLARGE,XXLARGE,XXXLARGE,INOMINUS}TAM;
 typedef char String[60];
 typedef FILE* ARQ;
 
@@ -18,7 +18,7 @@ typedef struct fila{
 }Fila;
 
 typedef struct tabela{
-    Fila filas[TAM_TABLE];
+    Fila* filas;
     int qtdLidas;
     int qtdOcupando;
     TAM tamanho;
@@ -82,7 +82,7 @@ void insereInNull(Table *t,String entrando,int oldPos);
 
 int getTamanho(Table* t);
 
-Table* aumentaTamnaho(Table* t,String dado);
+Table* aumentaTamnaho(Table* t);
 
 TAM getSize(int num);
 
@@ -115,3 +115,5 @@ int altura_arvore(struct nodo *a);
 void printTable(Table* t);
 
 void free_arv(Table* newTable,struct nodo* nodo);
+
+struct nodo* getNodo(struct nodo* nodo,String dado);
